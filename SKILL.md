@@ -290,7 +290,7 @@ python <skill目录>/tools/ai_taste_check.py <草稿.md|草稿.docx>
 **AI 不是天生会截图**——截图能力来自浏览器自动化工具（MCP）。成稿流程开始时先检测当前环境，按三级阶梯走：
 
 1. **自动检测**：检查当前可用工具列表，凡是能"打开 URL + 截图"的都算——Playwright MCP、chrome-devtools MCP、Puppeteer MCP 等浏览器类 MCP 提供的 navigate/screenshot 工具。**检测到就直接用**，每个 Step 由 AI 打开原始 URL 自动截图，无需询问用户。
-2. **没有工具 → 给建议**：明确告诉用户"检测到当前环境没有浏览器工具，无法自动截图"，并给出推荐安装命令（如 `claude mcp add playwright -- npx @playwright/mcp@latest`）。用户愿意装 → 装完回到第 1 级全自动。
+2. **没有工具 → 给建议**：明确告诉用户"检测到当前环境没有浏览器工具，无法自动截图"，并给出推荐安装命令（如 Playwright MCP，Claude Code 用 `claude mcp add playwright -- npx @playwright/mcp@latest`，其他 agent 按各自方式配）。用户愿意装 → 装完回到第 1 级全自动。
 3. **用户不装 → 人工供图**：每到一个需要截图的 Step，明确告诉用户"请把这一步的抓包工具/浏览器截图保存为 `shots/step<N>_<说明>.png`"，用户放好后嵌入对应位置。**禁止**因为没工具就静默跳过截图、用"此处应有截图"占位、或用文字描述代替。
 
 用户也不提供截图 → 报告不满足截图铁律，明确告知"缺真实截图的报告大概率被平台驳回"，由用户决定是否继续，不偷偷降级成无图报告。

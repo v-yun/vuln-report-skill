@@ -1,4 +1,4 @@
-# report — Submission-Ready Vulnerability Reports (Claude Code Skill)
+# report — Submission-Ready Vulnerability Reports (AI Agent Skill)
 
 [English](#english) | [中文](#中文)
 
@@ -32,11 +32,15 @@ flowchart TD
 |---|---|---|
 | ![demo page 1](docs/demo-1.png) | ![demo page 2](docs/demo-2.png) | ![demo page 3](docs/demo-3.png) |
 
+数据包 PoC 截图（`tools/burp_shot` 渲染：输入 = 真实抓包字节，输出 = 调试工具式双栏截图，字节级忠实——着色只包字不改字）：
+
+![burp_shot demo](docs/burp-shot-demo.png)
+
 ---
 
 ## English
 
-A Claude Code skill that turns **confirmed** vulnerabilities into submission-ready **DOCX** reports for SRC (Security Response Center) and 0day platforms.
+A skill for AI coding agents (Claude Code, Codex CLI, Cursor, or any agent that reads markdown instructions) that turns **confirmed** vulnerabilities into submission-ready **DOCX** reports for SRC (Security Response Center) and 0day platforms.
 
 It doesn't find vulnerabilities — it makes sure the **report** is good enough to survive review.
 
@@ -55,14 +59,16 @@ It doesn't find vulnerabilities — it makes sure the **report** is good enough 
 
 ### Install
 
-Copy the directory into Claude Code's skills directory:
+Install = make `SKILL.md` reachable as an instruction file by your agent. Examples:
 
 ```bash
-# project-level
+# Claude Code: project-level skills directory
 cp -r vuln-report-skill <your-project>/.claude/skills/report
-
-# or user-level (global)
+# Claude Code: user-level (global)
 cp -r vuln-report-skill ~/.claude/skills/report
+
+# other agents: copy SKILL.md content into your rules/instructions file,
+# or point the agent at SKILL.md when a report is needed
 ```
 
 `SKILL.md` and `template.docx` must stay in the same directory.
@@ -100,7 +106,7 @@ or "写报告 / 出报告 / 成稿 / 生成漏洞报告". The skill triggers aut
 - **`burp_shot` needs a local Chrome or Edge** for headless rendering — auto-detected from common install paths; override with the `BURP_SHOT_CHROME` env var if yours lives elsewhere.
 - **Dedup corpus is your own report library** (default `漏洞报告/` under the working directory; point the `DEDUP_CORPUS` env var at your report library). An empty library gets an explicit warning and no verdict — the protection grows as you accumulate reports.
 - Screenshots — the AI can only capture screenshots if it has a browser tool. At startup the skill **auto-detects** available browser MCPs (Playwright / chrome-devtools / Puppeteer / etc.) and uses whatever it finds, capturing **in the background without stealing window focus**. If none:
-  - **Auto (recommended)**: give Claude Code a browser MCP, e.g. Playwright: `claude mcp add playwright -- npx @playwright/mcp@latest`. The AI then opens original URLs and captures each step itself.
+  - **Auto (recommended)**: give your agent a browser tool — e.g. the Playwright MCP (`claude mcp add playwright -- npx @playwright/mcp@latest` on Claude Code, or the equivalent hook-up for your agent). The AI then opens original URLs and captures each step itself.
   - **Manual fallback**: if you don't install one, the skill switches to asking you to save each step's screenshot into `shots/` — it embeds them for you. It will never fabricate a render or silently skip a screenshot.
   - `shots/` is temporary: images are embedded into the DOCX, and the folder is deleted when the report is finished.
 
@@ -113,7 +119,7 @@ or "写报告 / 出报告 / 成稿 / 生成漏洞报告". The skill triggers aut
 
 ## 中文
 
-一个 Claude Code skill：把**已确认**的漏洞写成可直接提交 SRC / 0day 平台审核方的 **DOCX** 提交稿。
+一个给 AI 编码代理用的 skill（Claude Code / Codex CLI / Cursor 等任何能读 markdown 指令的 agent 通用）：把**已确认**的漏洞写成可直接提交 SRC / 0day 平台审核方的 **DOCX** 提交稿。
 
 它不教你怎么挖漏洞，只解决一件事：**报告写得够不够好**。
 
@@ -131,14 +137,16 @@ or "写报告 / 出报告 / 成稿 / 生成漏洞报告". The skill triggers aut
 
 ### 安装
 
-把整个目录复制到 Claude Code 的 skills 目录：
+安装 = 让你的 agent 能把 `SKILL.md` 当指令文件读到，按你所用 agent 的方式接入：
 
 ```bash
-# 项目级
+# Claude Code：项目级 skills 目录
 cp -r vuln-report-skill <your-project>/.claude/skills/report
-
-# 或用户级（全局可用）
+# Claude Code：用户级（全局）
 cp -r vuln-report-skill ~/.claude/skills/report
+
+# 其他 agent：把 SKILL.md 内容并入你的 rules/指令文件，
+# 或在需要写报告时让 agent 直接读 SKILL.md
 ```
 
 目录内需保持 `SKILL.md` 与 `template.docx` 同级。工具随包分发，SKILL.md 里的命令以 `<skill目录>/tools/...` 引用，无需另装。
@@ -160,7 +168,7 @@ cp -r vuln-report-skill ~/.claude/skills/report
 - **burp_shot 需要本机有 Chrome 或 Edge** 做 headless 截图渲染——自动检测常见安装路径，找不到时设环境变量 `BURP_SHOT_CHROME` 指向浏览器可执行文件
 - **查重语料 = 你自己的历史报告库**（默认当前目录 `漏洞报告/`，环境变量 `DEDUP_CORPUS` 可指向你的报告库）。空库会明确告警且不给出判定——保护力随你的报告库积累而增长
 - 截图——AI 手里有浏览器工具才能自动截图。skill 开工时会**自动检测**当前环境里可用的浏览器类 MCP（Playwright / chrome-devtools / Puppeteer 等），检测到什么就用什么，**全程后台截图不抢窗口焦点**。都没有则：
-  - **自动（推荐）**：给 Claude Code 装一个浏览器 MCP，例如 Playwright：`claude mcp add playwright -- npx @playwright/mcp@latest`，AI 就能自己打开原始 URL 逐步截图。
+  - **自动（推荐）**：给你的 agent 配一个浏览器工具，例如 Playwright MCP（Claude Code 用 `claude mcp add playwright -- npx @playwright/mcp@latest`，其他 agent 按各自方式接入），AI 就能自己打开原始 URL 逐步截图。
   - **手动降级**：不装工具时，skill 会改成"你把每步截图存进 `shots/` 目录，我来嵌入"。绝不会自造渲染图，也不会静默跳过截图。
   - `shots/` 是临时目录：图片已内嵌 DOCX，报告成稿后该目录自动清除。
 
