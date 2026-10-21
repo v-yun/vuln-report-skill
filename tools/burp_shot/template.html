@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1588px; height:676px; background:#323334; overflow:hidden;
+    font-family:"Microsoft YaHei UI","Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased; }
+  body { zoom:{ZOOM}; }
+
+  /* ── 顶条 y0-40 ── */
+  .titlebar { height:40px; display:flex; align-items:center; padding:0 14px; }
+  .logo { width:28px; height:28px; border-radius:50%; background:#d86633; color:#fff;
+    font-size:13px; display:flex; align-items:center; justify-content:center; margin-right:12px; }
+  .menu-item { font-size:12.5px; color:#8a9095; padding:0 10px; }
+  .pill { height:16px; border-radius:8px; background:#3d3f41; margin-left:6px; }
+  .title-url { margin-left:auto; color:#8a9095; font-size:12px; }
+  .proto-badge { margin-left:8px; font-size:11px; color:#9aa0a5; border:1px solid #4a4d50;
+    border-radius:3px; padding:1px 5px; }
+  .win-ctrl { margin-left:14px; display:flex; height:40px; }
+  .win-ctrl span { width:36px; display:flex; align-items:center; justify-content:center;
+    color:#8a9095; font-size:12px; }
+  .win-ctrl span:hover { background:#3d3f41; }
+  .win-ctrl .close { color:#c86a5a; }
+  .sep1 { height:8px; background:#3a3a3a; }
+
+  /* ── 工具栏 y48-112 ── */
+  .toolbar { height:64px; background:#2b2b2b; display:flex; align-items:center; padding:0 14px; gap:6px; }
+  .tbtn { height:28px; padding:0 12px; border-radius:4px; background:#383838; border:1px solid #4a4a4a;
+    color:#c4c8cb; font-size:13px; display:flex; align-items:center; gap:5px; }
+  .tbtn i { font-style:normal; font-size:11px; color:#9aa0a5; }
+  .tbtn.fwd i { color:#d86633; }
+  .tbtn.arrow { width:28px; padding:0; justify-content:center; color:#8f959a; background:#333; }
+  .tsep { width:1px; height:20px; background:#424242; margin:0 4px; }
+  .target-pill { margin-left:14px; height:28px; display:flex; align-items:center; padding:0 12px;
+    background:#333; border:1px solid #3f3f3f; border-radius:4px; font-size:13px; color:#97a1a7;
+    max-width:620px; white-space:nowrap; overflow:hidden; gap:6px; }
+  .target-pill b { color:#c2c9cd; font-weight:400; }
+  .target-pill .lock { color:#7d9c5e; font-size:11px; }
+  .target-pill .chev { color:#6f757a; font-size:10px; }
+  .tb-tabs { margin-left:auto; display:flex; align-items:flex-end; height:100%; }
+  .tb-tab { font-size:13px; color:#7a7f84; padding:0 16px; line-height:42px; }
+  .tb-tab.active { color:#d3d7da; border-bottom:2px solid #d86633; }
+
+  /* ── 面板头 y112-136 ── */
+  .panelhdr { height:24px; background:#35383a; display:flex; border-bottom:1px solid #2e3031; }
+  .ph-left,.ph-right { flex:1; display:flex; align-items:center; padding:0 10px; }
+  .ph-right { border-left:2px solid #404040; }
+  .ph-title { font-size:13px; color:#c8ccd0; margin-right:8px; }
+  .ph-sub { font-size:11.5px; padding:1px 8px; border-radius:3px; }
+  .ph-sub.on { color:#b9c2c8; background:#46494c; }
+  .ph-sub.off { color:#767c81; }
+  .ph-note { margin-left:auto; font-size:12px; color:#8f979c; margin-right:8px; }
+  .ph-icons { display:flex; gap:3px; }
+  .ph-ic { width:18px; height:16px; border-radius:3px; color:#8b9298; font-size:11px;
+    display:flex; align-items:center; justify-content:center; }
+  .ph-ic:hover { background:#43474a; }
+
+  /* ── 编辑器 y136-616 ── */
+  .editors { height:480px; background:#2b2b2b; display:flex; }
+  .editor { flex:1; display:flex; overflow:hidden; }
+  .gutter { width:64px; padding:6px 12px 0 0; text-align:right; color:#6c767c;
+    font:12.5px/20px Consolas,"Courier New",monospace; border-right:1px solid #303030;
+    background:#292929; }
+  .code { flex:1; padding:6px 0 0 12px; white-space:pre; color:#969ea4;
+    font:18px/20px Consolas,"Courier New",monospace; }
+  .ed-resp { border-left:2px solid #404040; }
+  .splitter { width:4px; background:#2b2b2b; position:relative; }
+  .splitter::after { content:"⋮"; position:absolute; top:48%; left:1px; color:#5a5f63; font-size:11px; }
+  .method  { color:#97a7b4; }
+  .path    { color:#a8b2b8; }
+  .ver     { color:#7f8a91; }
+  .hdrname { color:#97a7b4; }
+  .hdrval  { color:#969ea4; }
+  .jkey    { color:#ad8f56; }
+  .jstr    { color:#789655; }
+  .jnum    { color:#ad8f56; }
+  .jkw     { color:#8fa5b4; }
+  .st-line { color:#7f8a91; }
+  .st-2xx  { color:#8fae74; }
+  .st-4xx  { color:#c08a5a; }
+  .st-5xx  { color:#c0705a; }
+
+  /* ── 右缘折叠检查器条 ── */
+  .inspector { width:44px; background:#313132; display:flex; flex-direction:column;
+    align-items:center; padding-top:12px; gap:12px; border-left:1px solid #2a2a2b; }
+  .ins-blk { width:32px; height:16px; border-radius:3px; background:#454545; }
+  .ins-label { writing-mode:vertical-rl; letter-spacing:4px; color:#7a7f84; font-size:12px;
+    margin-top:6px; }
+  .ins-dots { margin-top:auto; margin-bottom:14px; width:22px; height:34px;
+    background:#3b3b3c; border-radius:3px; }
+
+  /* ── 底栏 y616-648 + 外框 ── */
+  .bottombar { height:32px; background:#3c3d3e; display:flex; align-items:center;
+    padding:0 14px; gap:10px; border-top:1px solid #333435; }
+  .dot-green { width:11px; height:11px; border-radius:50%; background:#729a4e;
+    box-shadow:0 0 4px rgba(114,154,78,.5); }
+  .done-btn { height:22px; padding:0 14px; border-radius:4px; background:#4a4d4f;
+    color:#c4c8cb; font-size:12px; display:flex; align-items:center; border:1px solid #57595b; }
+  .search { width:210px; height:22px; border-radius:4px; background:#303133; border:1px solid #3a3b3d;
+    color:#6a6f73; font-size:11px; display:flex; align-items:center; padding:0 8px; gap:5px; }
+  .search .mag { color:#6a6f73; font-size:11px; }
+  .gear { color:#9aa0a4; font-size:14px; margin-left:8px; }
+  .bytes { margin-left:auto; color:#7c8286; font-size:11.5px; }
+  .outer-bottom { height:28px; background:#323334; }
+</style>
+</head>
+<body>
+  <div class="titlebar">
+    <div class="logo">▶</div>
+    <div class="menu-item">文件</div>
+    <div class="menu-item">会话</div>
+    <div class="menu-item">工具</div>
+    <div class="menu-item">帮助</div>
+    <div class="pill" style="width:44px"></div>
+    <div class="pill" style="width:30px"></div>
+    <div class="title-url">{TITLE_URL}</div>
+    <div class="proto-badge">HTTP</div>
+    <div class="win-ctrl"><span>—</span><span>□</span><span class="close">✕</span></div>
+  </div>
+  <div class="sep1"></div>
+  <div class="toolbar">
+    <div class="tbtn fwd"><i>▶</i>转发</div>
+    <div class="tbtn"><i>✕</i>取消</div>
+    <div class="tsep"></div>
+    <div class="tbtn arrow">‹</div>
+    <div class="tbtn arrow">›</div>
+    <div class="tsep"></div>
+    <div class="target-pill"><span class="lock">🔒</span><b>目标:</b>{TARGET_URL}<span class="chev">▾</span></div>
+    <div class="tb-tabs">
+      <div class="tb-tab active">HTTP</div>
+      <div class="tb-tab">HTTP历史</div>
+    </div>
+  </div>
+  <div class="panelhdr">
+    <div class="ph-left">
+      <div class="ph-title">请求</div>
+      <div class="ph-sub on">Raw</div>
+      <div class="ph-sub off">Hex</div>
+      <div class="ph-icons"><div class="ph-ic">⧉</div><div class="ph-ic">⟳</div><div class="ph-ic">☰</div><div class="ph-ic">▤</div><div class="ph-ic">⚙</div></div>
+    </div>
+    <div class="ph-right">
+      <div class="ph-title">响应</div>
+      <div class="ph-sub on">Raw</div>
+      <div class="ph-sub off">Hex</div>
+      <div class="ph-note">检查</div>
+      <div class="ph-icons"><div class="ph-ic">⧉</div><div class="ph-ic">⟳</div><div class="ph-ic">☰</div><div class="ph-ic">▤</div><div class="ph-ic">⚙</div></div>
+    </div>
+  </div>
+  <div class="editors">
+    <div class="editor">
+      <div class="gutter">{GUTTER1}</div>
+      <div class="code" id="req">{REQ_HTML}</div>
+    </div>
+    <div class="splitter"></div>
+    <div class="editor ed-resp">
+      <div class="gutter">{GUTTER2}</div>
+      <div class="code" id="resp">{RESP_HTML}</div>
+    </div>
+    <div class="inspector">
+      <div class="ins-blk"></div>
+      <div class="ins-blk"></div>
+      <div class="ins-blk"></div>
+      <div class="ins-label">检查器</div>
+      <div class="ins-dots"></div>
+    </div>
+  </div>
+  <div class="bottombar">
+    <div class="dot-green"></div>
+    <div class="done-btn">完成</div>
+    <div class="search"><span class="mag">⌕</span>搜索…</div>
+    <div class="gear">⚙</div>
+    <div class="search" style="width:150px"><span class="mag">⌕</span>搜索…</div>
+    <div class="bytes">{BYTES}</div>
+  </div>
+  <div class="outer-bottom"></div>
+</body>
+</html>

@@ -47,8 +47,11 @@ It doesn't find vulnerabilities — it makes sure the **report** is good enough 
 - **Fixed DOCX layout**: `template.docx` ships all styles (Heading 2 sections, uniform black, linear plain document), generated section by section with python-docx.
 - **Step-style PoC spec**: every step = one-line title + context + raw HTTP request block copied from any proxy tool (Burp / Yakit / mitmproxy — no curl) + conclusion + real screenshot.
 - **Screenshot ironclad rule**: every step needs a real screenshot from the live target; fabricated renders are forbidden. Captures run **fully in the background** (headless / CDP) — no browser or proxy window is ever yanked to the foreground. Packet evidence is embedded as raw text blocks; if the proxy UI is screenshotted, it must be the request/response detail pane, never the history list.
-- **Anti-AI-tone rules**: kills template phrasing, filler words, and boilerplate — platform reviewers use AI detection plus human intuition, and template-tone reports get downgraded.
-- **Full workflow**: dedup check → gates → DOCX generation → semantic naming → archiving → update-vs-appeal handling → cleanup.
+- **Anti-AI-tone rules + machine audit**: kills template phrasing, filler words, and boilerplate — platform reviewers use AI detection plus human intuition, and template-tone reports get downgraded. Enforced by a zero-LLM counter (`tools/ai_taste_check.py`): paren-annotation quota, "attacker"-subject quota, textbook-"该X" quota, nominalized verbs, section-tail summaries, triple parallelism, repeated long IDs, empty severity phrases, EN model-isms. All green before the DOCX is generated.
+- **Packet screenshot renderer** (`tools/burp_shot/render.py`): turns real captured bytes (req/resp) into a dark-theme two-pane HTTP debugger screenshot (1588×676, line-number gutters, syntax palette) — byte-faithful, styling wraps bytes without altering them; changing one byte = fabricated evidence.
+- **Severity discipline + submission gate**: rating anchors to *the platform's own* system (VRT / outcomes / precedent bands) — CVSS only as fallback; full reasoning lives in a `<report>.gate.md` sidecar (template bundled), never in the report body. `tools/submit_gate.py` reads the sidecar and physically blocks submission until every check passes.
+- **Acceptance gate**: before submitting — policy-word mapping + out-of-scope list + precedent + settled-class check + independent red-team review (spawned via the Agent tool as an adversarial triager whose KPI is rejection), answered as verdict + basis + residual risk.
+- **Full workflow**: dedup check → gates → humanize rewrite pass + machine audit → DOCX generation → semantic naming → archiving → update-vs-appeal handling → cleanup.
 
 ### Install
 
@@ -64,6 +67,22 @@ cp -r vuln-report-skill ~/.claude/skills/report
 
 `SKILL.md` and `template.docx` must stay in the same directory.
 
+Package layout (tools are bundled — nothing extra to fetch):
+
+```
+vuln-report-skill/
+├── SKILL.md                                  # skill 本体（验证门+版式+流程）
+├── README.md / LICENSE
+├── template.docx                             # 版式基准（与 SKILL.md 同级，勿分离）
+├── templates/submission_scope_gate_template.md   # .gate.md 侧栏模板（定级推导+受理门三查）
+├── tools/
+│   ├── dedup_check.py                        # 查重（语料 = 你自己的报告库）
+│   ├── ai_taste_check.py                     # 去AI味机器审计（零 LLM 计数器）
+│   ├── submit_gate.py                        # 交单物理闸（读 .gate.md 侧栏逐项校验，不过闸不出稿）
+│   └── burp_shot/                            # 数据包截图渲染（render.py + template.html）
+└── docs/                                     # 本 README 效果图
+```
+
 ### Usage
 
 Once a vulnerability is verified, just say:
@@ -77,6 +96,9 @@ or "写报告 / 出报告 / 成稿 / 生成漏洞报告". The skill triggers aut
 ### Requirements
 
 - `python-docx`: `pip install python-docx`
+- **Bundled tools** — `tools/` ships with the skill (dedup / AI-tone audit / submission gate / packet-shot renderer). No extra install; commands in SKILL.md refer to `<skill directory>/tools/...`.
+- **`burp_shot` needs a local Chrome or Edge** for headless rendering — auto-detected from common install paths; override with the `BURP_SHOT_CHROME` env var if yours lives elsewhere.
+- **Dedup corpus is your own report library** (default `漏洞报告/` under the working directory; point the `DEDUP_CORPUS` env var at your report library). An empty library gets an explicit warning and no verdict — the protection grows as you accumulate reports.
 - Screenshots — the AI can only capture screenshots if it has a browser tool. At startup the skill **auto-detects** available browser MCPs (Playwright / chrome-devtools / Puppeteer / etc.) and uses whatever it finds, capturing **in the background without stealing window focus**. If none:
   - **Auto (recommended)**: give Claude Code a browser MCP, e.g. Playwright: `claude mcp add playwright -- npx @playwright/mcp@latest`. The AI then opens original URLs and captures each step itself.
   - **Manual fallback**: if you don't install one, the skill switches to asking you to save each step's screenshot into `shots/` — it embeds them for you. It will never fabricate a render or silently skip a screenshot.
@@ -102,8 +124,10 @@ or "写报告 / 出报告 / 成稿 / 生成漏洞报告". The skill triggers aut
 - **固定 DOCX 版式**：`template.docx` 内置全部样式（微软雅黑、Heading 2 章节、全文统一黑色），python-docx 逐节生成，朴素线性文档，不堆表格卡片。
 - **Step 式 PoC 规格**：每步 = 一句话标题 + 操作上下文 + 原始请求块（从 Burp/Yakit 等任意抓包工具原文复制，不放 curl）+ 结果结论 + 真实截图。
 - **截图铁律**：每步必须配真实目标截图，严禁自造渲染。截图**全程后台完成**（headless/CDP），不把浏览器或抓包工具窗口弹到前台；数据包以原始文本块入报告，截工具界面时只截请求/响应详情面板，不截历史列表。
-- **简洁硬规 + 去 AI 腔硬规**：消灭八股标签、填充语、形容词渲染、模板化句式——平台 AI 检测和人工直觉都会筛掉模板腔报告。
-- **完整成稿流程**：查重 → 过验证门 → 生成 DOCX → 语义化命名 → 归档 → 更新/驳回两种处理 → 收尾清理。
+- **简洁硬规 + 去 AI 腔硬规 + 机器审计**：消灭八股标签、填充语、形容词渲染、模板化句式——平台 AI 检测和人工直觉都会筛掉模板腔报告。配套零 LLM 计数器 `tools/ai_taste_check.py`（括号注解/主语复读/教科书腔/名词化动词/节尾总结/三连排比/ID 复现/空话/英文 model-isms 逐项计数），全绿才进 DOCX 生成。
+- **数据包截图渲染**（`tools/burp_shot/render.py`）：真实抓包字节 → 暗色双栏 HTTP 调试工具截图（1588×676，行号/语法着色），字节级忠实，渲染只做外壳。
+- **定级纪律 + 交单物理闸**：定级锚目标平台自己的体系（VRT / outcomes / 判例带），CVSS 只兜底；完整推导写 `<报告名>.gate.md` 侧栏（模板随包），禁入报告正文；`tools/submit_gate.py` 读侧栏逐项校验，不过闸不进提交流程。
+- **完整成稿流程**：查重 → 过验证门 → 人化改写 pass + 机器审计 → 生成 DOCX → 语义化命名 → 归档 → 更新/驳回两种处理 → 收尾清理。
 
 ### 安装
 
@@ -117,7 +141,7 @@ cp -r vuln-report-skill <your-project>/.claude/skills/report
 cp -r vuln-report-skill ~/.claude/skills/report
 ```
 
-目录内需保持 `SKILL.md` 与 `template.docx` 同级。
+目录内需保持 `SKILL.md` 与 `template.docx` 同级。工具随包分发，SKILL.md 里的命令以 `<skill目录>/tools/...` 引用，无需另装。
 
 ### 使用
 
@@ -132,6 +156,9 @@ cp -r vuln-report-skill ~/.claude/skills/report
 ### 依赖
 
 - `python-docx`（生成 DOCX）：`pip install python-docx`
+- **工具随包自带**：`tools/` 目录（查重 / 去AI味审计 / 交单物理闸 / 数据包截图渲染）随 skill 分发，无需另装
+- **burp_shot 需要本机有 Chrome 或 Edge** 做 headless 截图渲染——自动检测常见安装路径，找不到时设环境变量 `BURP_SHOT_CHROME` 指向浏览器可执行文件
+- **查重语料 = 你自己的历史报告库**（默认当前目录 `漏洞报告/`，环境变量 `DEDUP_CORPUS` 可指向你的报告库）。空库会明确告警且不给出判定——保护力随你的报告库积累而增长
 - 截图——AI 手里有浏览器工具才能自动截图。skill 开工时会**自动检测**当前环境里可用的浏览器类 MCP（Playwright / chrome-devtools / Puppeteer 等），检测到什么就用什么，**全程后台截图不抢窗口焦点**。都没有则：
   - **自动（推荐）**：给 Claude Code 装一个浏览器 MCP，例如 Playwright：`claude mcp add playwright -- npx @playwright/mcp@latest`，AI 就能自己打开原始 URL 逐步截图。
   - **手动降级**：不装工具时，skill 会改成"你把每步截图存进 `shots/` 目录，我来嵌入"。绝不会自造渲染图，也不会静默跳过截图。
