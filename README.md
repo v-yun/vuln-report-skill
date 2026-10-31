@@ -36,6 +36,10 @@ flowchart TD
 
 ![burp_shot demo](docs/burp-shot-demo.png)
 
+国内平台风格数据包截图（`tools/yakit_shot` 渲染：Yakit Web Fuzzer 风格 863×435，同样字节级忠实；按平台审核习惯在 burp_shot / yakit_shot 间选形）：
+
+![yakit_shot demo](docs/yakit-shot-demo.png)
+
 ---
 
 ## English
@@ -52,7 +56,9 @@ It doesn't find vulnerabilities — it makes sure the **report** is good enough 
 - **Step-style PoC spec**: every step = one-line title + context + raw HTTP request block copied from any proxy tool (Burp / Yakit / mitmproxy — no curl) + conclusion + real screenshot.
 - **Screenshot ironclad rule**: every step needs a real screenshot from the live target; fabricated renders are forbidden. Captures run **fully in the background** (headless / CDP) — no browser or proxy window is ever yanked to the foreground. Packet evidence is embedded as raw text blocks; if the proxy UI is screenshotted, it must be the request/response detail pane, never the history list.
 - **Anti-AI-tone rules + machine audit**: kills template phrasing, filler words, and boilerplate — platform reviewers use AI detection plus human intuition, and template-tone reports get downgraded. Enforced by a zero-LLM counter (`tools/ai_taste_check.py`): paren-annotation quota, "attacker"-subject quota, textbook-"该X" quota, nominalized verbs, section-tail summaries, triple parallelism, repeated long IDs, empty severity phrases, EN model-isms. All green before the DOCX is generated.
-- **Packet screenshot renderer** (`tools/burp_shot/render.py`): turns real captured bytes (req/resp) into a dark-theme two-pane HTTP debugger screenshot (1588×676, line-number gutters, syntax palette) — byte-faithful, styling wraps bytes without altering them; changing one byte = fabricated evidence.
+- **Packet screenshot renderer** (`tools/burp_shot/render.py`): turns real captured bytes (req/resp) into a dark-theme two-pane HTTP debugger screenshot (1588×676, line-number gutters, syntax palette) — byte-faithful, styling wraps bytes without altering them; changing one byte = fabricated evidence. A Yakit-style variant (`tools/yakit_shot/render.py`, 863×435) ships for CN-platform reviewers — pick the shape your platform's triagers actually use.
+- **Production economics (quality > speed > token)**: the report is assembled from a cached skeleton + evidence archived at discovery time + ~15 sentences unique to this bug — the model never re-generates boilerplate. Edits are whole-file rewrites (never docx patching), ≤2 full read-write rounds, second report on the same platform targets 15 minutes. A cold-read gate (9 rules from a real triage pain round) makes a zero-context reviewer understand every paragraph, every mystery value sourced, zero placeholders.
+- **Capture rigs** (`rigs/`): battle-hardened helpers — Excel row screenshot (COM + ASCII-path pitfall), console run capture, CDP browser capture, screen capture, OCR fallback. Paths parameterized; nothing campaign-specific inside.
 - **Severity discipline + submission gate**: rating anchors to *the platform's own* system (VRT / outcomes / precedent bands) — CVSS only as fallback; full reasoning lives in a `<report>.gate.md` sidecar (template bundled), never in the report body. `tools/submit_gate.py` reads the sidecar and physically blocks submission until every check passes.
 - **Acceptance gate**: before submitting — policy-word mapping + out-of-scope list + precedent + settled-class check + independent red-team review (spawned via the Agent tool as an adversarial triager whose KPI is rejection), answered as verdict + basis + residual risk.
 - **Full workflow**: dedup check → gates → humanize rewrite pass + machine audit → DOCX generation → semantic naming → archiving → update-vs-appeal handling → cleanup.
@@ -77,15 +83,18 @@ Package layout (tools are bundled — nothing extra to fetch):
 
 ```
 vuln-report-skill/
-├── SKILL.md                                  # skill 本体（验证门+版式+流程）
+├── SKILL.md                                  # skill 本体（总纲三指标+验证门+冷读门+版式+流程）
+├── 0day.md                                   # 0day/通用产品收录审查门 A-D + 通用型模板（成稿前必读）
 ├── README.md / LICENSE
 ├── template.docx                             # 版式基准（与 SKILL.md 同级，勿分离）
 ├── templates/submission_scope_gate_template.md   # .gate.md 侧栏模板（定级推导+受理门三查）
+├── rigs/                                     # 截图 rig（Excel行/终端/CDP浏览器/全屏/OCR降级）
 ├── tools/
 │   ├── dedup_check.py                        # 查重（语料 = 你自己的报告库）
 │   ├── ai_taste_check.py                     # 去AI味机器审计（零 LLM 计数器）
 │   ├── submit_gate.py                        # 交单物理闸（读 .gate.md 侧栏逐项校验，不过闸不出稿）
-│   └── burp_shot/                            # 数据包截图渲染（render.py + template.html）
+│   ├── burp_shot/                            # 数据包截图渲染 Burp 风格（render.py + template.html）
+│   └── yakit_shot/                           # 数据包截图渲染 Yakit 风格（国内平台形）
 └── docs/                                     # 本 README 效果图
 ```
 
@@ -131,7 +140,9 @@ or "写报告 / 出报告 / 成稿 / 生成漏洞报告". The skill triggers aut
 - **Step 式 PoC 规格**：每步 = 一句话标题 + 操作上下文 + 原始请求块（从 Burp/Yakit 等任意抓包工具原文复制，不放 curl）+ 结果结论 + 真实截图。
 - **截图铁律**：每步必须配真实目标截图，严禁自造渲染。截图**全程后台完成**（headless/CDP），不把浏览器或抓包工具窗口弹到前台；数据包以原始文本块入报告，截工具界面时只截请求/响应详情面板，不截历史列表。
 - **简洁硬规 + 去 AI 腔硬规 + 机器审计**：消灭八股标签、填充语、形容词渲染、模板化句式——平台 AI 检测和人工直觉都会筛掉模板腔报告。配套零 LLM 计数器 `tools/ai_taste_check.py`（括号注解/主语复读/教科书腔/名词化动词/节尾总结/三连排比/ID 复现/空话/英文 model-isms 逐项计数），全绿才进 DOCX 生成。
-- **数据包截图渲染**（`tools/burp_shot/render.py`）：真实抓包字节 → 暗色双栏 HTTP 调试工具截图（1588×676，行号/语法着色），字节级忠实，渲染只做外壳。
+- **数据包截图渲染**（`tools/burp_shot/render.py`）：真实抓包字节 → 暗色双栏 HTTP 调试工具截图（1588×676，行号/语法着色），字节级忠实，渲染只做外壳。国内平台另有 Yakit Web Fuzzer 风格变体（`tools/yakit_shot/render.py`，863×435）——按审核习惯选形。
+- **生产三指标（质量 > 速度 > 省 token）**：报告 = 缓存骨架 + 挖掘期已归档证据 + 约 15 句本洞独特内容，模型不现场生成套话；改 = 整体重写（禁 docx 补丁），全文读写 ≤2 轮，同平台第二份起目标 15 分钟出稿。冷读门九条（零背景审核逐段读到底：占位符禁令/证据禁自造/神秘值溯源/整节重写律/一致性清单）管呈现层不死在最后一米。
+- **截图 rig**（`rigs/`）：实战固化件——Excel 原表行截图（COM+ASCII 路径坑已防）、终端跑脚本截图、CDP 浏览器截图、全屏截图、OCR 降级；路径已参数化，不含任何战役残留。
 - **定级纪律 + 交单物理闸**：定级锚目标平台自己的体系（VRT / outcomes / 判例带），CVSS 只兜底；完整推导写 `<报告名>.gate.md` 侧栏（模板随包），禁入报告正文；`tools/submit_gate.py` 读侧栏逐项校验，不过闸不进提交流程。
 - **完整成稿流程**：查重 → 过验证门 → 人化改写 pass + 机器审计 → 生成 DOCX → 语义化命名 → 归档 → 更新/驳回两种处理 → 收尾清理。
 
