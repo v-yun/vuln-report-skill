@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:863px;height:435px;overflow:hidden;font-family:"Microsoft YaHei",sans-serif;font-size:11px;background:#eef0f3}
+.win{display:flex;flex-direction:column;height:100%}
+/* 工具行 y0-30 白底 */
+.tb{height:30px;background:#fff;display:flex;align-items:center;padding:0 8px;gap:5px;border-bottom:1px solid #d5d8dc;flex-shrink:0}
+.btn-ai{background:#1a1a2e;color:#fff;border-radius:10px;padding:2px 10px;font-size:10px;white-space:nowrap}
+.btn-send{background:#00b578;color:#fff;border-radius:3px;padding:3px 10px;font-size:10px;font-weight:bold;white-space:nowrap}
+.dd{color:#666;font-size:10px;padding:1px 4px;white-space:nowrap}
+.url{flex:1;color:#333;font-size:10px;font-family:Consolas,monospace;overflow:hidden;white-space:nowrap;padding:0 6px;border:1px solid #d0d0d0;border-radius:3px;height:20px;display:flex;align-items:center;background:#fff}
+/* 主体: 左右双面板 同底色#EEF0F3 */
+.main{flex:1;display:flex;min-height:0}
+.lp{width:52%;display:flex;flex-direction:column;border-right:1px solid #c8ccd2}
+.rp{width:48%;display:flex;flex-direction:column}
+/* 面板头 20px */
+.ph{height:20px;display:flex;align-items:center;padding:0 6px;gap:4px;flex-shrink:0;background:#dfe3e8;border-bottom:1px solid #c8ccd2}
+.ph .lbl{font-size:9px;color:#888}
+.ph .act{font-size:9px;color:#4a90d9}
+.ph .sep{color:#bbb;font-size:9px}
+/* 编辑区 */
+.ed{flex:1;overflow:hidden;background:#eef0f3;font-family:Consolas,Menlo,monospace;font-size:10px;line-height:14px;padding:5px 7px;white-space:pre-wrap;word-break:break-all;color:#444}
+/* 语法色(浅底#EEF0F3) */
+.m{color:#d0021b;font-weight:bold}
+.hn{color:#333;font-weight:bold}
+.hv{color:#555}
+.rhk{color:#2f6bc4}
+.rhv{color:#555}
+.jk{color:#1a55b8}
+.js{color:#5d7a2e}
+.jn{color:#b58900}
+.jb{color:#9b30d9}
+.ln{color:#aaa;margin-right:5px;display:inline-block;width:16px;text-align:right;user-select:none;font-size:9px}
+/* form参数着色 */
+.fn{color:#1a55b8;font-weight:bold}
+.fv{color:#5d7a2e}
+.fv2{color:#b58900}
+.fv3{color:#888}
+.amp{color:#aaa}
+.path{color:#333;font-weight:bold}
+.ver{color:#888}
+.st{color:#00b578;font-weight:bold}
+.ok{color:#00b578;font-weight:bold}
+.strip{height:8px;background:#fff;border-top:1px solid #d5d8dc;flex-shrink:0}
+</style></head><body>
+<div class="win">
+  <div class="tb">
+    <span class="btn-ai">AI</span>
+    <span class="btn-send">发送</span>
+    <span class="dd">HTTPS ▾</span>
+    <span class="dd">代理: 自定义</span>
+    <div class="url"><span>🔒</span>__URL__</div>
+  </div>
+  <div class="main">
+    <div class="lp">
+      <div class="ph"><span class="lbl">Request</span><span style="flex:1"></span><span class="act">参数化</span><span class="sep">|</span><span class="act">格式化</span><span class="act">高亮</span></div>
+      <div class="ed">__REQUEST__</div>
+    </div>
+    <div class="rp">
+      <div class="ph"><span class="lbl">Response</span><span style="flex:1"></span><span class="act">美化</span><span class="act">HEX</span><span class="act">编码</span></div>
+      <div class="ed">__RESPONSE__</div>
+    </div>
+  </div>
+  <div class="strip"></div>
+</div>
+</body></html>
