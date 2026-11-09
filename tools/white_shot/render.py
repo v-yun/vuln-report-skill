@@ -3,7 +3,7 @@
 """white_shot — 把真实抓包字节渲染成白底报告风格截图（客户交付默认款）
 与 yakit_shot 同契约：req/resp 逐字节来自真实抓包，渲染只做外壳，改一字节=伪造证据。
 用法: python render.py --req req.raw --resp resp.raw --host api.example.com --out shot.png [--title "POST /x 登录"]
-立法：国内客户交付统一白底款，深色 yakit/burp 风仅平台口味点名时用。"""
+立法：国内客户交付统一白底款，深色调试工具风仅平台口味点名时用。"""
 import argparse, html, os, subprocess, sys, tempfile
 
 EDGE_CANDIDATES = [

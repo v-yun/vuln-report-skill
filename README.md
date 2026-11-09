@@ -32,11 +32,7 @@ flowchart TD
 |---|---|---|
 | ![demo page 1](docs/demo-1.png) | ![demo page 2](docs/demo-2.png) | ![demo page 3](docs/demo-3.png) |
 
-数据包 PoC 截图（`tools/burp_shot` 渲染：输入 = 真实抓包字节，输出 = 调试工具式双栏截图，字节级忠实——着色只包字不改字）：
-
-![burp_shot demo](docs/burp-shot-demo.png)
-
-国内平台风格数据包截图（`tools/yakit_shot` 渲染：Yakit Web Fuzzer 风格 863×435，同样字节级忠实；按平台审核习惯在 burp_shot / yakit_shot 间选形）：
+国内平台风格数据包截图（`tools/yakit_shot` 渲染：Yakit Web Fuzzer 风格 863×435，同样字节级忠实）：
 
 ![yakit_shot demo](docs/yakit-shot-demo.png)
 
@@ -53,10 +49,10 @@ It doesn't find vulnerabilities — it makes sure the **report** is good enough 
 - **Two-stage review**: a lightweight signal triage runs **while digging** (stop-loss on dead ends before burning tokens on verification) + full layered verification gates before writing (hard gates: reproducible PoC / impact driven to the final harm / server-side confirmation / falsification tests; per-type criteria for data leak, IDOR, RCE, SSRF, injection; 0day acceptance gates). No gate, no report — this filters out "signal ≠ vulnerability" garbage at the source.
 - **Dual readability standard**: a product manager can reproduce it step by step; a security engineer finds it technically solid. Both or rework.
 - **Fixed DOCX layout**: `template.docx` ships all styles (Heading 2 sections, uniform black, linear plain document), generated section by section with python-docx.
-- **Step-style PoC spec**: every step = one-line title + context + raw HTTP request block copied from any proxy tool (Burp / Yakit / mitmproxy — no curl) + conclusion + real screenshot.
+- **Step-style PoC spec**: every step = one-line title + context + raw HTTP request block copied from any proxy tool (Yakit / mitmproxy — no curl) + conclusion + real screenshot.
 - **Screenshot ironclad rule**: every step needs a real screenshot from the live target; fabricated renders are forbidden. Captures run **fully in the background** (headless / CDP) — no browser or proxy window is ever yanked to the foreground. Packet evidence is embedded as raw text blocks; if the proxy UI is screenshotted, it must be the request/response detail pane, never the history list.
 - **Anti-AI-tone rules + machine audit**: kills template phrasing, filler words, and boilerplate — platform reviewers use AI detection plus human intuition, and template-tone reports get downgraded. Enforced by a zero-LLM counter (`tools/ai_taste_check.py`): paren-annotation quota, "attacker"-subject quota, textbook-"该X" quota, nominalized verbs, section-tail summaries, triple parallelism, repeated long IDs, empty severity phrases, EN model-isms. All green before the DOCX is generated.
-- **Packet screenshot renderer** (`tools/burp_shot/render.py`): turns real captured bytes (req/resp) into a dark-theme two-pane HTTP debugger screenshot (1588×676, line-number gutters, syntax palette) — byte-faithful, styling wraps bytes without altering them; changing one byte = fabricated evidence. A Yakit-style variant (`tools/yakit_shot/render.py`, 863×435) ships for CN-platform reviewers — pick the shape your platform's triagers actually use.
+- **Packet screenshot renderer** (`tools/yakit_shot/render.py`): turns real captured bytes (req/resp) into a Yakit Web Fuzzer style screenshot (863×435, syntax palette) — byte-faithful, styling wraps bytes without altering them; changing one byte = fabricated evidence.
 - **Production economics (quality > speed > token)**: the report is assembled from a cached skeleton + evidence archived at discovery time + ~15 sentences unique to this bug — the model never re-generates boilerplate. Edits are whole-file rewrites (never docx patching), ≤2 full read-write rounds, second report on the same platform targets 15 minutes. A cold-read gate (9 rules from a real triage pain round) makes a zero-context reviewer understand every paragraph, every mystery value sourced, zero placeholders.
 - **Client-template rewrite skeleton** (): when the client hands you a fixed docx template (cover table + auto-TOC + per-finding seven-section layout),  rewrites the whole file from it — outlineLvl probe, TOC refresh via COM, orphan-media strip, font sweep, image sizing all built in. Swap the content module, keep the structure.
 - **White-background archive shots** (): renders packet pairs onto a clean white canvas with key-field highlighting — for client-facing deliverables where dark debugger chrome reads badly.
@@ -96,7 +92,6 @@ vuln-report-skill/
 │   ├── dedup_check.py                        # 查重（语料 = 你自己的报告库）
 │   ├── ai_taste_check.py                     # 去AI味机器审计（零 LLM 计数器）
 │   ├── submit_gate.py                        # 交单物理闸（读 .gate.md 侧栏逐项校验，不过闸不出稿）
-│   ├── burp_shot/                            # 数据包截图渲染 Burp 风格（render.py + template.html）
 │   ├── white_shot/                          # 白底档案证据截图（客户交付观感）
 │   └── yakit_shot/                           # 数据包截图渲染 Yakit 风格（国内平台形）
 └── docs/                                     # 本 README 效果图
@@ -116,7 +111,7 @@ or "写报告 / 出报告 / 成稿 / 生成漏洞报告". The skill triggers aut
 
 - `python-docx`: `pip install python-docx`
 - **Bundled tools** — `tools/` ships with the skill (dedup / AI-tone audit / submission gate / packet-shot renderer). No extra install; commands in SKILL.md refer to `<skill directory>/tools/...`.
-- **`burp_shot` needs a local Chrome or Edge** for headless rendering — auto-detected from common install paths; override with the `BURP_SHOT_CHROME` env var if yours lives elsewhere.
+- **`yakit_shot` needs a local Chrome or Edge** for headless rendering — auto-detected from common install paths; override with the `YAKITRP_SHOT_CHROME` env var if yours lives elsewhere.
 - **Dedup corpus is your own report library** (default `漏洞报告/` under the working directory; point the `DEDUP_CORPUS` env var at your report library). An empty library gets an explicit warning and no verdict — the protection grows as you accumulate reports.
 - Screenshots — the AI can only capture screenshots if it has a browser tool. At startup the skill **auto-detects** available browser MCPs (Playwright / chrome-devtools / Puppeteer / etc.) and uses whatever it finds, capturing **in the background without stealing window focus**. If none:
   - **Auto (recommended)**: give your agent a browser tool — e.g. the Playwright MCP (`claude mcp add playwright -- npx @playwright/mcp@latest` on Claude Code, or the equivalent hook-up for your agent). The AI then opens original URLs and captures each step itself.
@@ -141,10 +136,10 @@ or "写报告 / 出报告 / 成稿 / 生成漏洞报告". The skill triggers aut
 - **双重审查机制**：第一道在**挖掘过程中**跑——遇到信号先快筛（明显不够格的当场止损，不浪费 token 深挖）；第二道在成稿前跑——完整分层验证门（硬门 / 按类型命门表 / 0day 收录审查门）。不过门不成稿，从源头挡掉"信号当漏洞"的垃圾报告。
 - **双重可读写作标准**：产品经理照着 Step 能复现，安全工程师看完觉得技术扎实——两个维度缺一返工。
 - **固定 DOCX 版式**：`template.docx` 内置全部样式（微软雅黑、Heading 2 章节、全文统一黑色），python-docx 逐节生成，朴素线性文档，不堆表格卡片。
-- **Step 式 PoC 规格**：每步 = 一句话标题 + 操作上下文 + 原始请求块（从 Burp/Yakit 等任意抓包工具原文复制，不放 curl）+ 结果结论 + 真实截图。
+- **Step 式 PoC 规格**：每步 = 一句话标题 + 操作上下文 + 原始请求块（从 Yakit 等任意抓包工具原文复制，不放 curl）+ 结果结论 + 真实截图。
 - **截图铁律**：每步必须配真实目标截图，严禁自造渲染。截图**全程后台完成**（headless/CDP），不把浏览器或抓包工具窗口弹到前台；数据包以原始文本块入报告，截工具界面时只截请求/响应详情面板，不截历史列表。
 - **简洁硬规 + 去 AI 腔硬规 + 机器审计**：消灭八股标签、填充语、形容词渲染、模板化句式——平台 AI 检测和人工直觉都会筛掉模板腔报告。配套零 LLM 计数器 `tools/ai_taste_check.py`（括号注解/主语复读/教科书腔/名词化动词/节尾总结/三连排比/ID 复现/空话/英文 model-isms 逐项计数），全绿才进 DOCX 生成。
-- **数据包截图渲染**（`tools/burp_shot/render.py`）：真实抓包字节 → 暗色双栏 HTTP 调试工具截图（1588×676，行号/语法着色），字节级忠实，渲染只做外壳。国内平台另有 Yakit Web Fuzzer 风格变体（`tools/yakit_shot/render.py`，863×435）——按审核习惯选形。
+- **数据包截图渲染**（`tools/yakit_shot/render.py`）：真实抓包字节 → Yakit Web Fuzzer 风格截图（863×435，行号/语法着色），字节级忠实，渲染只做外壳。国内平台另有 Yakit Web Fuzzer 风格变体（`tools/yakit_shot/render.py`，863×435）——按审核习惯选形。
 - **生产三指标（质量 > 速度 > 省 token）**：报告 = 缓存骨架 + 挖掘期已归档证据 + 约 15 句本洞独特内容，模型不现场生成套话；改 = 整体重写（禁 docx 补丁），全文读写 ≤2 轮，同平台第二份起目标 15 分钟出稿。冷读门九条（零背景审核逐段读到底：占位符禁令/证据禁自造/神秘值溯源/整节重写律/一致性清单）管呈现层不死在最后一米。
 - **截图 rig**（`rigs/`）：实战固化件——Excel 原表行截图（COM+ASCII 路径坑已防）、终端跑脚本截图、CDP 浏览器截图、全屏截图、OCR 降级；路径已参数化，不含任何战役残留。
 - **定级纪律 + 交单物理闸**：定级锚目标平台自己的体系（VRT / outcomes / 判例带），CVSS 只兜底；完整推导写 `<报告名>.gate.md` 侧栏（模板随包），禁入报告正文；`tools/submit_gate.py` 读侧栏逐项校验，不过闸不进提交流程。
@@ -180,7 +175,7 @@ cp -r vuln-report-skill ~/.claude/skills/report
 
 - `python-docx`（生成 DOCX）：`pip install python-docx`
 - **工具随包自带**：`tools/` 目录（查重 / 去AI味审计 / 交单物理闸 / 数据包截图渲染）随 skill 分发，无需另装
-- **burp_shot 需要本机有 Chrome 或 Edge** 做 headless 截图渲染——自动检测常见安装路径，找不到时设环境变量 `BURP_SHOT_CHROME` 指向浏览器可执行文件
+- **yakit_shot 需要本机有 Chrome 或 Edge** 做 headless 截图渲染——自动检测常见安装路径，找不到时设环境变量 `YAKITRP_SHOT_CHROME` 指向浏览器可执行文件
 - **查重语料 = 你自己的历史报告库**（默认当前目录 `漏洞报告/`，环境变量 `DEDUP_CORPUS` 可指向你的报告库）。空库会明确告警且不给出判定——保护力随你的报告库积累而增长
 - 截图——AI 手里有浏览器工具才能自动截图。skill 开工时会**自动检测**当前环境里可用的浏览器类 MCP（Playwright / chrome-devtools / Puppeteer 等），检测到什么就用什么，**全程后台截图不抢窗口焦点**。都没有则：
   - **自动（推荐）**：给你的 agent 配一个浏览器工具，例如 Playwright MCP（Claude Code 用 `claude mcp add playwright -- npx @playwright/mcp@latest`，其他 agent 按各自方式接入），AI 就能自己打开原始 URL 逐步截图。
@@ -193,7 +188,7 @@ cp -r vuln-report-skill ~/.claude/skills/report
 
 ```
 你:   我刚确认了 api.example.com 的订单接口越权，B 的 token 能读 A 的订单，
-      手机号/地址/身份证都拿到了，Burp 抓包和截图都在。写报告。
+      手机号/地址/身份证都拿到了，抓包和截图都在。写报告。
 
 Claude:（自动触发本 skill）
   1. 查重 —— 翻你历史报告目录，确认没写过同根因的
