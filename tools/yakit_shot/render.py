@@ -100,19 +100,6 @@ def render_response(raw):
             out.append(esc(body[:2000]))
     return '\n'.join(out)
 
-def _log_call(a):
-    # 出稿武器登记(幽灵稿判例立法): 每次渲染落一行,谁在何时对哪个host出了图,盘上留痕
-    try:
-        import datetime
-        logp = os.path.normpath(os.path.join(HERE, 'render_calls.log'))
-        os.makedirs(os.path.dirname(logp), exist_ok=True)
-        with open(logp, 'a', encoding='utf-8') as f:
-            f.write('%s\tyakit_shot\t%s\t%s\t%s\n' % (
-                datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                a.host, os.path.abspath(a.req), os.path.abspath(a.out)))
-    except Exception:
-        pass
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--req', required=True)
@@ -123,7 +110,6 @@ def main():
     ap.add_argument('--height', type=int, default=435)
     ap.add_argument('--ms', default='56')
     a = ap.parse_args()
-    _log_call(a)
 
     req = open(a.req, 'rb').read()
     resp = open(a.resp, 'rb').read()
