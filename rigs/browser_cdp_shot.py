@@ -1,21 +1,31 @@
 # -*- coding: utf-8 -*-
-"""真实浏览器打开附件HTML解密工具,填入密文,点解密,截图"""
-import subprocess, time, json, urllib.request, base64, pathlib, sys
-import websocket
+"""CDP 驱动真实浏览器截图 rig（通用版：参数化，无战役现场数据）
+用法: python browser_cdp_shot.py <url> <out.png> [--wait-js EXPR] [--eval EXPR ...] [--port N] [--profile DIR]
+--wait-js 轮询执行 JS 到返回 true 再继续；--eval 依序执行（填值/点按钮）后截图。
+示例: python browser_cdp_shot.py "file:///C:/tool/index.html" shot.png --wait-js "document.getElementById('selftest').textContent.includes('PASS')" --eval "document.getElementById('inp').value='DEMO_INPUT'" --eval "doRun()"
+需 pip install websocket-client"""
+import subprocess, time, json, urllib.request, base64, pathlib, argparse
 
-PROFILE = r'<workdir>\edge_profile'
-URL = 'file:///C:/Users/13222/Desktop/yakit_poc/' + '%E8%A7%A3%E5%AF%86%E8%84%9A%E6%9C%AC/' + '%E5%A4%AA%E4%BF%9DE%E9%94%A6%E5%9B%8A%E8%A7%A3%E5%AF%86%E5%B7%A5%E5%85%B7.html'
-PORT = 19223
+ap = argparse.ArgumentParser()
+ap.add_argument('url'); ap.add_argument('out')
+ap.add_argument('--wait-js', dest='wait_js', default=None)
+ap.add_argument('--eval', dest='evals', action='append', default=[])
+ap.add_argument('--port', type=int, default=19223)
+ap.add_argument('--profile', default=None)
+a = ap.parse_args()
 
-proc = subprocess.Popen([
-    r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe',
-    f'--remote-debugging-port={PORT}', f'--user-data-dir={PROFILE}',
-    '--window-size=1280,900', '--no-first-run', '--no-default-browser-check', URL
-], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+args = [r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe',
+        f'--remote-debugging-port={a.port}', '--window-size=1280,900',
+        '--no-first-run', '--no-default-browser-check']
+if a.profile:
+    args.append(f'--user-data-dir={a.profile}')
+args.append(a.url)
+proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 time.sleep(6)
 
-tabs = json.load(urllib.request.urlopen(f'http://127.0.0.1:{PORT}/json'))
+tabs = json.load(urllib.request.urlopen(f'http://127.0.0.1:{a.port}/json'))
 ws_url = next(t['webSocketDebuggerUrl'] for t in tabs if t['type'] == 'page')
+import websocket
 ws = websocket.create_connection(ws_url, timeout=20)
 
 def send(method, params=None, i=[0]):
@@ -29,31 +39,19 @@ def send(method, params=None, i=[0]):
 def evl(expr):
     return send('Runtime.evaluate', {'expression': expr, 'returnByValue': True})['result'].get('value')
 
-# 等自检出结果
-for _ in range(20):
-    if evl("document.getElementById('selftest').textContent.includes('PASS')"): break
-    time.sleep(0.5)
+# 等待条件（可选）
+if a.wait_js:
+    for _ in range(30):
+        if evl(a.wait_js): break
+        time.sleep(0.5)
 
-# 填 PoC 密文并解密
-ct = 'S5rNm5vUWm/F4FxqHplvfhMG5ubWR96mN/9NKeOp8HztARi5nc7ijTY2tb0OU+GOvzy6km/LQAj3D7vI2F8++2KeKbfZshdKtgT///clMzidxIMggXWrXZRyBP5G3ZXTb9+bazZ8lwyy9BzrKPiq6ixFeaQJGtlgHXek6K8Sh28uq6bQ24fZ0nga0ZTzdQNK'
-evl(f"document.getElementById('inp').value='{ct}'")
-evl('doDec()')
-time.sleep(1)
-out1 = evl("document.getElementById('out').textContent")
-print('解密输出:', out1[:100])
+for e in a.evals:
+    evl(e)
+    time.sleep(1)
 
-shot1 = send('Page.captureScreenshot', {'format': 'png'})['data']
-pathlib.Path(r'<workdir>\poc_raw\shot_tool1.png').write_bytes(base64.b64decode(shot1))
-print('shot_tool1 saved')
-
-# 第二发: ecardno
-evl("document.getElementById('inp').value='vF+gZwFNfYoQ59HqM7pEz+vowLvOjWmeyiVqacyQ2CHkyS7XwWhg/+95mr58SNAW'")
-evl('doDec()')
-time.sleep(1)
-print('ecardno解密输出:', evl("document.getElementById('out').textContent")[:60])
-shot2 = send('Page.captureScreenshot', {'format': 'png'})['data']
-pathlib.Path(r'<workdir>\poc_raw\shot_tool2.png').write_bytes(base64.b64decode(shot2))
-print('shot_tool2 saved')
-
+shot = send('Page.captureScreenshot', {'format': 'png'})['data']
+out = pathlib.Path(a.out); out.parent.mkdir(parents=True, exist_ok=True)
+out.write_bytes(base64.b64decode(shot))
+print('saved', a.out)
 ws.close()
 proc.terminate()

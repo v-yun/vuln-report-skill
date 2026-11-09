@@ -58,6 +58,8 @@ It doesn't find vulnerabilities — it makes sure the **report** is good enough 
 - **Anti-AI-tone rules + machine audit**: kills template phrasing, filler words, and boilerplate — platform reviewers use AI detection plus human intuition, and template-tone reports get downgraded. Enforced by a zero-LLM counter (`tools/ai_taste_check.py`): paren-annotation quota, "attacker"-subject quota, textbook-"该X" quota, nominalized verbs, section-tail summaries, triple parallelism, repeated long IDs, empty severity phrases, EN model-isms. All green before the DOCX is generated.
 - **Packet screenshot renderer** (`tools/burp_shot/render.py`): turns real captured bytes (req/resp) into a dark-theme two-pane HTTP debugger screenshot (1588×676, line-number gutters, syntax palette) — byte-faithful, styling wraps bytes without altering them; changing one byte = fabricated evidence. A Yakit-style variant (`tools/yakit_shot/render.py`, 863×435) ships for CN-platform reviewers — pick the shape your platform's triagers actually use.
 - **Production economics (quality > speed > token)**: the report is assembled from a cached skeleton + evidence archived at discovery time + ~15 sentences unique to this bug — the model never re-generates boilerplate. Edits are whole-file rewrites (never docx patching), ≤2 full read-write rounds, second report on the same platform targets 15 minutes. A cold-read gate (9 rules from a real triage pain round) makes a zero-context reviewer understand every paragraph, every mystery value sourced, zero placeholders.
+- **Client-template rewrite skeleton** (): when the client hands you a fixed docx template (cover table + auto-TOC + per-finding seven-section layout),  rewrites the whole file from it — outlineLvl probe, TOC refresh via COM, orphan-media strip, font sweep, image sizing all built in. Swap the content module, keep the structure.
+- **White-background archive shots** (): renders packet pairs onto a clean white canvas with key-field highlighting — for client-facing deliverables where dark debugger chrome reads badly.
 - **Capture rigs** (`rigs/`): battle-hardened helpers — Excel row screenshot (COM + ASCII-path pitfall), console run capture, CDP browser capture, screen capture, OCR fallback. Paths parameterized; nothing campaign-specific inside.
 - **Severity discipline + submission gate**: rating anchors to *the platform's own* system (VRT / outcomes / precedent bands) — CVSS only as fallback; full reasoning lives in a `<report>.gate.md` sidecar (template bundled), never in the report body. `tools/submit_gate.py` reads the sidecar and physically blocks submission until every check passes.
 - **Acceptance gate**: before submitting — policy-word mapping + out-of-scope list + precedent + settled-class check + independent red-team review (spawned via the Agent tool as an adversarial triager whose KPI is rejection), answered as verdict + basis + residual risk.
@@ -88,12 +90,14 @@ vuln-report-skill/
 ├── README.md / LICENSE
 ├── template.docx                             # 版式基准（与 SKILL.md 同级，勿分离）
 ├── templates/submission_scope_gate_template.md   # .gate.md 侧栏模板（定级推导+受理门三查）
+├── templates/report_skeleton/          # 客户模板重写骨架（build_report.py + content 模板）
 ├── rigs/                                     # 截图 rig（Excel行/终端/CDP浏览器/全屏/OCR降级）
 ├── tools/
 │   ├── dedup_check.py                        # 查重（语料 = 你自己的报告库）
 │   ├── ai_taste_check.py                     # 去AI味机器审计（零 LLM 计数器）
 │   ├── submit_gate.py                        # 交单物理闸（读 .gate.md 侧栏逐项校验，不过闸不出稿）
 │   ├── burp_shot/                            # 数据包截图渲染 Burp 风格（render.py + template.html）
+│   ├── white_shot/                          # 白底档案证据截图（客户交付观感）
 │   └── yakit_shot/                           # 数据包截图渲染 Yakit 风格（国内平台形）
 └── docs/                                     # 本 README 效果图
 ```

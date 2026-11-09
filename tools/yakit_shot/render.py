@@ -101,7 +101,7 @@ def render_response(raw):
     return '\n'.join(out)
 
 def _log_call(a):
-    # 出稿武器登记(2026-10-29 幽灵稿判例): 每次渲染落一行,谁在何时对哪个host出了图,盘上留痕
+    # 出稿武器登记(幽灵稿判例立法): 每次渲染落一行,谁在何时对哪个host出了图,盘上留痕
     try:
         import datetime
         logp = os.path.normpath(os.path.join(HERE, 'render_calls.log'))
