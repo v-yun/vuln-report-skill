@@ -250,7 +250,7 @@ python tools/ai_taste_check.py <草稿.md|草稿.docx>
 - 凡绕过限制后能在浏览器直接打开渲染的图片/视频/页面/文件/JSON 响应 → **必须用浏览器打开原始 URL 截图**放进报告。
 - 每个 Step 的关键结果都要有对应截图，让审核者能看到"我确实在真实目标上看到了这个"。
 - **唯一例外**：目标内容客观无法在浏览器渲染时，才允许离线渲染/转存，并在报告里**明确写出为什么无法用浏览器直接截图**。
-- **PoC 数据包截图走 yakit_shot**（按用户参考图复刻）：`python tools/yakit_shot/render.py --req req.raw --resp resp.raw --host api.example.com --out shot.png`，产出中文调试工具风格截图（863×435：行号双栏/蓝灰-琥珀-橄榄绿语法着色/转发-取消-目标 chrome/右缘检查器条，`--width` 等比缩放）。**契约=证据铁律**：req/resp 逐字节来自真实抓包（`curl -i` 原始输出/抓包日志/http_request 工具落盘文件），禁止手敲或改写任何字节，渲染只做外壳（着色 span 只包字不改字）；拿不准的元数据留默认不编造。**改一字节=伪造证据**，比没截图严重得多。文本 PoC 同步保留 raw HTTP 请求块（永不 curl）。
+- **PoC 数据包截图走 yakit_shot**（按用户参考图复刻）：`python tools/yakit_shot/render.py --req req.raw --resp resp.raw --host api.example.com --out shot.png`，产出中文调试工具风格截图（863×435：行号双栏/蓝灰-琥珀-橄榄绿语法着色/转发-取消-目标 chrome/右缘检查器条，`--width` 等比缩放）。**契约=证据铁律**：req/resp 逐字节来自真实抓包（`curl -i` 原始输出/抓包日志/抓包工具导出文件），禁止手敲或改写任何字节，渲染只做外壳（着色 span 只包字不改字）；拿不准的元数据留默认不编造。**改一字节=伪造证据**，比没截图严重得多。文本 PoC 同步保留 raw HTTP 请求块（永不 curl）。
 
 **截图来源优先级（某保险众测实锤：审核更认真工具界面，渲染图降级为兜底）**：
 ① 用户实际使用的抓包工具原生界面（Yakit 等抓包工具面板——用户已在用就取其原生截图/历史导出）→ ② 目标在浏览器可渲染的，浏览器打开原始 URL 截图 → ③ 来源物原样截图（Excel 原表跳行截图 / 可见终端跑脚本截图 / CDP 驱动真实浏览器截 HTML 工具页——rig 已固化在 `rigs/`）→ ④ yakit_shot（tools/yakit_shot/render.py，863×435 Yakit风格+完整语法着色，v8定版用户验收通过；命令: python tools/yakit_shot/render.py --req req.raw --resp resp.raw --host 域名 --out shot.png --ms 实测ms）/ yakit_shot 渲染图（工具：tools/yakit_shot/render.py 仿 Yakit Web Fuzzer 风格——输入同样是真实抓包字节，渲染只做外壳，视觉验收 9/10）。①可得时禁用④。
@@ -288,7 +288,7 @@ python tools/ai_taste_check.py <草稿.md|草稿.docx>
 
 **AI 不是天生会截图**——截图能力来自浏览器自动化工具（MCP）。成稿流程开始时先检测当前环境，按三级阶梯走：
 
-1. **自动检测**：检查当前可用工具列表，凡是能"打开 URL + 截图"的都算——Playwright MCP、chrome-devtools MCP、Puppeteer MCP、js-reverse 等浏览器类 MCP 提供的 navigate/screenshot 工具。**检测到就直接用**，每个 Step 由 AI 打开原始 URL 自动截图，无需询问用户。
+1. **自动检测**：检查当前可用工具列表，凡是能"打开 URL + 截图"的都算——Playwright MCP、chrome-devtools MCP、Puppeteer MCP 等浏览器自动化工具提供的 navigate/screenshot 工具。**检测到就直接用**，每个 Step 由 AI 打开原始 URL 自动截图，无需询问用户。
 2. **没有工具 → 给建议**：明确告诉用户"检测到当前环境没有浏览器工具，无法自动截图"，并给出推荐安装命令（如 `claude mcp add playwright -- npx @playwright/mcp@latest`）。用户愿意装 → 装完回到第 1 级全自动。
 3. **用户不装 → 人工供图**：每到一个需要截图的 Step，明确告诉用户"请把这一步的抓包工具/浏览器截图保存为 `shots/step<N>_<说明>.png`"，用户放好后嵌入对应位置。**禁止**因为没工具就静默跳过截图、用"此处应有截图"占位、或用文字描述代替。
 
